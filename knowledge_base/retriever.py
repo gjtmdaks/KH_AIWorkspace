@@ -39,7 +39,7 @@ def search_with_score(query:str, k:int) -> list[tuple[Document, float]]:
     return vs.similarity_search_with_score(query, k)
 
 # 검색된 Documents리스트를 LLM프롬프트용 문자열로 변환하는 함수
-def fomat_docs(docs:list[Document]) -> str:
+def format_docs(docs:list[Document]) -> str:
     parts = []
     for i, doc in enumerate(docs, 1):
         file_name = doc.metadata.get("file_name", "unknown")
