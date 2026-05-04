@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from agents.legal_qa_agent import ask_legal_question
 from config import settings
 from knowledge_base.indexing import run_indexing
-# from agents.supervisor import ask_supervisor
+from agents.supervisor import ask_supervisor
 
 """
     LangServe
@@ -30,8 +30,16 @@ class AnswerOutput(BaseModel):
     answer : str
     sources : list[str] = []
 
+class SupervisorAnswerOutput(BaseModel):
+    state : str
+    thread_id : str
+    intent : str
+    answr : str
+    sources : list[str]
+    message : str
+
 # LangServe 서버 구축
-# run_indexing()
+# run_indexing() 1회만 생성하고 호출금지
 
 # 1. FastAPI앱 생성
 app = FastAPI(
@@ -54,4 +62,21 @@ add_routes(
     enabled_endpoints=["invoke", "stream", "stream_log", "playground"]
 )
 
+def _call_supervisor(state) -> dict:
+    question = state["question"]
+    return ask_supervisor(question)
+
+supervisor_runnable = RunnableLambda(_call_supervisor).with_types(
+    input_type=QuestionInput,
+    output_type=SupervisorAnswerOutput
+)
+
+add_routes(
+    app,
+    supervisor_runnable,
+    path="/ask",
+    enabled_endpoints=["invoke", "stream", "stream_log", "playground"]
+)
+
 # 서버 실행
+# uvicorn server:app --host 0.0.0.0 --port 8000 --reload
